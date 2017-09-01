@@ -1,0 +1,289 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/polymer/lib/utils/debounce.html">
+
+<link rel="import" href="../../../bower_components/iron-ajax/iron-ajax.html">
+
+<link rel="import" href="jsonapi-settings.html">
+
+<dom-module id="jsonapi-resource">
+  <template>
+    <iron-ajax
+      id="request"
+      handle-as="json"
+      params="[[ params ]]"
+      content-type="application/json"
+      on-response="_handleResponse"
+      on-error="_handleError"></iron-ajax>
+  </template>
+
+  <script>
+    /**
+     * # JSON API Resource
+     * The `<jsonapi-resource>` element can be used to fetch, create and update resources.
+     *
+     * ## Examples
+     *
+     *     <jsonapi-resource
+     *       resource="projects"
+     *       response="{{ my_project }}"
+     *       auto-get
+     *       single></jsonapi-resource>
+     *
+     * With `auto-get` set to true, the element performs a request whenever its `api-root` is changed.
+     * `single` indicates whether an Array of Objects or only a single Object should be returned, combined with `resourceId`, a specific object can be fetched.
+     *
+     * When `data` is set the resource can be created or updated by (optionally setting `resourceId` and) calling `.save()`, the returned data is in `response`. Call `.delete()` to remove the item.
+     *
+     * You can trigger a request explicitly by calling `.get()` on the element.
+     *
+     * @customElement
+     * @polymer
+     * @extends {Polymer.Element}
+     * @polymerMixin JsonapiSettingsMixin
+     */
+    class JsonapiResource extends JsonapiSettingsMixin(Polymer.Element) {
+      static get is() { return 'jsonapi-resource'; }
+
+      static get properties() {
+        return {
+          /** the name of the resource endpoint */
+          resource: {
+            type: String,
+          },
+          /** the id (optional) if you want to get/set a specific one */
+          resourceId: {
+            type: String,
+          },
+          /** fire get request on property changes and create */
+          autoGet: {
+            type: Boolean,
+            value: false,
+          },
+          /** if true only the first element is returned */
+          single: {
+            type: Boolean,
+            value: false,
+          },
+          /** data to sent */
+          data: {
+            type: Object,
+          },
+          /** response data */
+          response: {
+            type: Object,
+            notify: true,
+          },
+          /** filter for get requests */
+          filters: {
+            type: Object,
+          },
+          /** the returned errors and their codes */
+          errors: {
+            type: Array,
+            value: [],
+            notify: true,
+          },
+          params: {
+            computed: '_params(apiKey)',
+          },
+          /** whether the response event should bubble (default `false`) */
+          responseBubbles: {
+            type: Boolean,
+            value: false,
+          },
+          /** whether the error event should bubble (default `true`), for use with jsonapi-error-toast */
+          errorBubbles: {
+            type: Boolean,
+            value: true,
+          },
+          /** debounce time for requests */
+          debounceDuration: {
+            type: Number,
+            default: 100,
+          }
+        };
+      }
+
+      static get observers() {
+        return [
+          '_autoGet(apiRoot, apiKey, resource, resourceId, filters.*)',
+        ];
+      }
+
+      /**
+       * Fire a request to fetch the resource, `filters` can be applied before.
+       *
+       */
+      get() {
+        this.$.request.url = `${this.apiRoot}/${this.resource}?${this._filterString()}`;
+        this.$.request.body = {};
+        this._generateRequest('GET');
+      }
+
+      /**
+       * Fire a post request to create a resource containing `data`.
+       *
+       */
+      create() {
+        this.$.request.url = `${this.apiRoot}/${this.resource}`;
+        this._setBody();
+        this._generateRequest('POST');
+      }
+
+      /**
+       * Fire a post request to create a resource containing `data`.
+       *
+       */
+      update() {
+        this.$.request.url = `${this.apiRoot}/${this.resource}/${this.resourceId}`;
+        this._setBody();
+        this._generateRequest('PUT');
+      }
+
+      /**
+       * Fire a request to delete the resource at `resourceId`.
+       *
+       */
+      delete() {
+        this.$.request.url = `${this.apiRoot}/${this.resource}/${this.resourceId}`;
+        this._generateRequest('DELETE');
+      }
+
+      /**
+       * A shorthand for create and update depending on `resourceId` being set or not.
+       *
+       */
+      save() {
+        if( this.resourceId ) {
+          this.update();
+        } else {
+          this.create();
+        }
+      }
+
+      _setBody() {
+        this.single = true;
+        this.$.request.body = {};
+        this.$.request.body[this._singularize(this.resource)] = this.data;
+      }
+
+      _generateRequest(method) {
+        this.errors = [];
+        this.$.request.method = method;
+        this.$.request.generateRequest();
+      }
+
+      _autoGet() {
+        this._debounceAutoGet = Polymer.Debouncer.debounce(
+          this._debounceAutoGet,
+          Polymer.Async.timeOut.after(this.debounceDuration),
+          () => {
+            if (this.apiRoot == null || this.resource == null) {
+              return;
+            }
+            if (this.autoGet) {
+              this.get();
+            }
+          });
+      }
+
+      _filterString() {
+        let filterParts = [];
+        let filter;
+        let value;
+
+        for (filter in this.filters) {
+          if (Object.prototype.hasOwnProperty.call(this.filters, filter)) {
+            value = this.filters[filter];
+            filter = window.encodeURIComponent(filter);
+
+            if (Array.isArray(value)) {
+              for (var i = 0; i < value.length; i++) {
+                filterParts.push(filter + '[]=' + window.encodeURIComponent(value[i]));
+              }
+            } else if (value !== null) {
+              filterParts.push(filter + '=' + window.encodeURIComponent(value));
+            } else {
+              filterParts.push(filter);
+            }
+          }
+        }
+
+        return filterParts.join('&');
+      }
+
+      _params(apiKey) {
+        return {
+          'accesstoken': apiKey,
+        };
+      }
+
+      /**
+       * singularize the resource
+       * for now its enough to cut the trailing s
+       * but maybe someday a better solution might be required, see:
+       * https://github.com/blakeembrey/pluralize
+       *
+       * @param {string} word The word to singularize
+       * @return {string} The singular
+       **/
+      _singularize(word) {
+        if( word.slice(-1) != 's' ) {
+          throw new Error('singularize for ' + word + ' failed');
+        }
+
+        return word.slice(0, -1);
+      }
+
+      _handleResponse(data) {
+        if(data.detail.response != null) {
+          if( this.resourceId || this.single ) {
+            this.response = data.detail.response[this.resource][0];
+          } else {
+            this.response = data.detail.response[this.resource];
+          }
+        }
+
+        /**
+         * @event jsonapi-response Fired on succesful request.
+         * @param {detail.response} Object an Array containing all Objects or just one Object when `single` is set.
+         */
+        this.dispatchEvent(new CustomEvent('jsonapi-response', {
+          detail: {
+            response: this.response,
+          },
+          bubbles: this.responseBubbles,
+          composed: true,
+        }));
+      }
+
+      _handleError(event, error) {
+        let xhr = error.request.xhr;
+
+        if( [0, 405, 502, 503, 504].includes(xhr.status) ) {
+          this.push('errors', {
+            'statusCode': xhr.status,
+            'detail': 'Server unreachable',
+            'context': `${this.resource} ${this.$.request.method}`,
+          });
+        } else {
+          this.errors = xhr.response.errors;
+        }
+
+        /**
+         * @event jsonapi-error Fired on error.
+         * @param {detail.errors} Array errors array containing error Objects of the form {statusCode, detail, context}.
+         */
+        this.dispatchEvent(new CustomEvent('jsonapi-error', {
+          detail: {
+            errors: this.errors,
+          },
+          bubbles: this.errorBubbles,
+          composed: true,
+        }));
+      }
+    }
+
+    customElements.define(JsonapiResource.is, JsonapiResource);
+  </script>
+</dom-module>

@@ -1,0 +1,122 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="jsonapi-settings">
+  <script>
+    let jsonapiSettingsInstance = null;
+
+    /**
+     * # JSON API Settings
+     * The `<jsonapi-settings>` element provides global jsonapi settings.
+     *
+     * ## Examples
+     *
+     *     <jsonapi-settings
+     *       api-root="httpe://api.example.com"
+     *       api-key="2342aaaa"></jsonapi-settings>
+     *
+     * @customElement
+     * @polymer
+     */
+    class JsonapiSettings extends Polymer.Element {
+      static get is() { return 'jsonapi-settings'; }
+
+      static get properties() {
+        return {
+          /** api root url */
+          apiRoot: {
+            type: String,
+          },
+          /** api key (optional) */
+          apiKey: {
+            type: String,
+          },
+          _subscribers: {
+            type: Array,
+            value: () => [],
+          },
+        };
+      }
+
+      static get observers() {
+        return [
+          '_settingsChanged(apiRoot, apiKey)',
+        ];
+      }
+
+      constructor() {
+        super();
+        if (!jsonapiSettingsInstance) jsonapiSettingsInstance = this;
+      }
+
+      register(subscriber) {
+        this._subscribers.push(subscriber);
+        this._updateElement(subscriber);
+      }
+
+      unregister(subscriber) {
+        var i = this._subscribers.indexOf(subscriber);
+        if (i > -1) this._subscribers.splice(i, 1);
+      }
+
+      _settingsChanged(...args) {
+        for(var i = 0; i < this._subscribers.length; i++) {
+          this._updateElement(this._subscribers[i]);
+        }
+      }
+
+      _updateElement(element) {
+        element.apiRoot = this.apiRoot;
+        element.apiKey = this.apiKey;
+      }
+    }
+
+    customElements.define(JsonapiSettings.is, JsonapiSettings);
+
+    /**
+     * # JSON API Settings mixin
+     *
+     * This provides methods and properties to access global api settings
+     *
+     * ## Examples
+     *
+     *     class MyElem extends JsonapiSettingsMixin(Polymer.Element) {
+     *       doSomethingWithApiRoot () {
+     *         console.log('global api url', this.apiRoot);
+     *       }
+     *     }
+     *
+     * @polymerMixin JsonapiSettingsMixin
+     * @param {Class} superClass The class to extend
+     * @return {Class} The extended class
+     */
+    JsonapiSettingsMixin = (superClass) => {
+      /**
+       * @mixinClass
+       */
+      return class extends superClass {
+        static get properties() {
+          return {
+            /** api root url */
+            apiRoot: {
+              type: String,
+            },
+            /** api key (optional) */
+            apiKey: {
+              type: String,
+            },
+          };
+        }
+
+        connectedCallback() {
+          super.connectedCallback();
+          jsonapiSettingsInstance.register(this);
+        }
+
+        disconnectedCallback() {
+          super.disconnectedCallback();
+          jsonapiSettingsInstance.unregister(this);
+        }
+      };
+    };
+  </script>
+</dom-module>

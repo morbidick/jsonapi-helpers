@@ -1,0 +1,24 @@
+{
+  "name": "jsonapi-helpers",
+  "description": "Components to communicate with a jsonapi",
+  "author": "morbidick",
+  "license": "MIT",
+  "main": ["jsonapi-resource.html", "jsonapi-settings.html", "jsonapi-error-toast.html"],
+  "dependencies": {
+    "bower": "^1.8.0",
+    "polymer-cli": "^1.0.0"
+  },
+  "scripts": {
+    "start": "npm run serve",
+    "init": "polymer init",
+    "serve": "polymer serve",
+    "build": "polymer build",
+    "analyze": "polymer analyze > analysis.json",
+    "lint": "polymer lint",
+    "test": "polymer test",
+    "postinstall": "bower install",
+    "wcinstall": "bower install --save",
+    "wcupdate": "bower update"
+  },
+  "devDependencies": {}
+}

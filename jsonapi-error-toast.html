@@ -1,0 +1,72 @@
+<link rel="import" href="../../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../../bower_components/polymer/lib/elements/dom-repeat.html">
+
+<link rel="import" href="../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../../bower_components/paper-tooltip/paper-tooltip.html">
+
+<dom-module id="jsonapi-error-toast">
+  <template>
+    <style>
+      iron-icon {
+        cursor: pointer;
+      }
+    </style>
+    <paper-toast id="toast" duration="[[ duration ]]">
+      <template is="dom-repeat" items="{{ _errors }}" as="error">
+        <div>
+          [[ error.detail ]]
+          <iron-icon icon="icons:info-outline" id="info"></iron-icon>
+          <paper-tooltip for="info" position="top">
+            action: [[ error.context ]]
+            <br/>
+            code: [[ error.statusCode ]]
+          </paper-tooltip>
+        </div>
+      </template>
+    </paper-toast>
+  </template>
+
+  <script>
+    /**
+     * # JSON API eroor toast
+     * The `<jsonapi-error-toast>` element displays a toast with the error details on `jsonapi-error`.
+     *
+     * ## Examples
+     *
+     *     <jsonapi-error-toast"></jsonapi-error-toast>
+     *
+     * @customElement
+     * @polymer
+     */
+    class JsonapiErrorToast extends Polymer.Element {
+      static get is() { return 'jsonapi-error-toast'; }
+
+      static get properties() {
+        return {
+          _errors: {
+            type: Array,
+            value: [],
+          },
+          /** how long to display the toast */
+          duration: {
+            type: Number,
+            value: 8000,
+          },
+        };
+      }
+
+      ready() {
+        super.ready();
+        document.body.addEventListener('jsonapi-error', this._onError.bind(this));
+      }
+
+      _onError(event) {
+        this._errors = event.detail.errors;
+        this.$.toast.open();
+      }
+    }
+
+    customElements.define(JsonapiErrorToast.is, JsonapiErrorToast);
+  </script>
+</dom-module>
