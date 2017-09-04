@@ -115,7 +115,7 @@
        *
        */
       get() {
-        this.$.request.url = `${this.apiRoot}/${this.resource}?${this._filterString()}`;
+        this.$.request.url = this._appendParam(`${this.apiRoot}/${this.resource}`, this._filterString());
         this.$.request.body = {};
         this._generateRequest('GET');
       }
@@ -233,6 +233,17 @@
         }
 
         return word.slice(0, -1);
+      }
+
+      _appendParam(url, paramString) {
+        var url = url || '';
+
+        if (paramString) {
+          var bindingChar = url.indexOf('?') >= 0 ? '&' : '?';
+          return url + bindingChar + paramString;
+        }
+
+        return url;
       }
 
       _handleResponse(data) {
