@@ -109,12 +109,16 @@
 
         connectedCallback() {
           super.connectedCallback();
-          jsonapiSettingsInstance.register(this);
+          if (jsonapiSettingsInstance) {
+            jsonapiSettingsInstance.register(this);
+          }
         }
 
         disconnectedCallback() {
           super.disconnectedCallback();
-          jsonapiSettingsInstance.unregister(this);
+          if (jsonapiSettingsInstance) {
+            jsonapiSettingsInstance.unregister(this);
+          }
         }
       };
     };
