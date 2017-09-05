@@ -115,7 +115,12 @@
        *
        */
       get() {
-        this.$.request.url = this._appendParam(`${this.apiRoot}/${this.resource}`, this._filterString());
+        if( this.resourceId ) {
+          this.$.request.url = `${this.apiRoot}/${this.resource}/${this.resourceId}`;
+        } else {
+          this.$.request.url = this._appendParam(`${this.apiRoot}/${this.resource}`, this._filterString());
+        }
+
         this.$.request.body = {};
         this._generateRequest('GET');
       }
