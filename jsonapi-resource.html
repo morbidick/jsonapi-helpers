@@ -254,7 +254,7 @@
       }
 
       _handleResponse(data) {
-        if(data.detail.response != null) {
+        if(data.detail.response != null && data.detail.response[this.resource] != null) {
           if( this.resourceId || this.single ) {
             this.response = data.detail.response[this.resource][0];
           } else {
