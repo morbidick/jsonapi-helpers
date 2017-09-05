@@ -130,6 +130,7 @@
        *
        */
       create() {
+        this.single = true;
         this.$.request.url = `${this.apiRoot}/${this.resource}`;
         this._setBody();
         this._generateRequest('POST');
@@ -140,6 +141,7 @@
        *
        */
       update() {
+        this.single = true;
         this.$.request.url = `${this.apiRoot}/${this.resource}/${this.resourceId}`;
         this._setBody();
         this._generateRequest('PUT');
