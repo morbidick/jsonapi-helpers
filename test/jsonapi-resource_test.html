@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>jsonapi-resource test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../jsonapi-resource.html">
+  </head>
+  <body>
+
+    <test-fixture id="BooksAll">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="books"
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="BooksAuto">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="books"
+          auto-get
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="BooksFilter">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="books"
+          filters='{
+            "test_filters": [2,3],
+            "another_filter": "dubidu"
+          }'
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="BooksSingle">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="books"
+          resource-id="specific-id"
+          single
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="CreatePicture">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="pictures"
+          data='{ "name": "test"}'
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="UpdateAuthor">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="authors"
+          resource-id="first-one"
+          data='{ "name": "test"}'
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="UpdateAuthorError">
+      <template>
+        <jsonapi-resource
+          api-root="http://example.com"
+          resource="authors"
+          resource-id="missing-field"
+          data='{ "name": "test"}'
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('<jsonapi-resource>', function() {
+
+        setup(function() {
+          server = sinon.fakeServer.create();
+          headers = { 'Content-Type': 'application/json' };
+
+          // GET Requests (books)
+          server.respondWith(
+            'GET',
+            'http://example.com/books',
+            [ 200, headers, '{"books": [{"title": "one"},{"title": "two"}]}' ]
+          );
+          server.respondWith(
+            'GET',
+            'http://example.com/books/specific-id',
+            [ 200, headers, '{"books": [{"id": "a36", "title": "one"}]}' ]
+          );
+
+          // POST Requests (pictures)
+          server.respondWith(
+            'POST',
+            'http://example.com/pictures',
+            [ 201, headers, '{"pictures": [{"id": "new-id","title": "one"}]}' ]
+          );
+
+          // PUT Requests (authors)
+          server.respondWith(
+            'PUT',
+            'http://example.com/authors/first-one',
+            [ 200, headers, '{"authors": [{"id": "first-one","name": "one"}]}' ]
+          );
+          server.respondWith(
+            'PUT',
+            'http://example.com/authors/missing-field',
+            [ 402, headers, '{"errors": [{"context": "some field was missing"}]}' ]
+          );
+
+          // DELETE Requests (books)
+          server.respondWith(
+            'DELETE',
+            'http://example.com/books/specific-id',
+            [ 200, headers, '{"success": "true"}']
+          );
+        });
+
+        teardown(function() {
+          server.restore();
+        });
+
+        suite.skip('auto-get property', function() {
+
+          test('when not set no request gets fired', function() {
+            var element = fixture('BooksAll');
+            server.respond();
+
+            expect(server.requests.length).to.be.equal(0);
+          });
+
+          test('triggers and returns data', function(done) {
+            var element = fixture('BooksAuto');
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(server.requests.length).to.be.equal(1);
+              expect(element.response).to.be.ok;
+              expect(element.response).to.be.an('object');
+              expect(element.response.books).to.be.an('object');
+              done();
+            });
+
+            server.respond();
+          });
+        });
+
+        suite('.get() method', function() {
+
+          test('uses GET method', function() {
+            var element = fixture('BooksAll');
+            element.get();
+
+            expect(server.requests[0].method).to.be.equal('GET');
+          });
+
+          test('uses correct path', function() {
+            var element = fixture('BooksAll');
+            element.get();
+
+            expect(server.requests[0].url).to.be.equal('http://example.com/books');
+          });
+
+          test('single uses correct path', function() {
+            var element = fixture('BooksSingle');
+            element.get();
+
+            expect(server.requests[0].url).to.be.equal('http://example.com/books/specific-id');
+          });
+
+          test('correct filters in path', function() {
+            var element = fixture('BooksFilter');
+            element.get();
+
+            expect(server.requests[0].url).to.be.equal('http://example.com/books?test_filters[]=2&test_filters[]=3&another_filter=dubidu');
+          });
+
+          test('returns data', function(done) {
+            var element = fixture('BooksAll');
+            element.get();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(server.requests.length).to.be.equal(1);
+              expect(element.response).to.be.ok;
+              expect(element.response).to.be.an('array');
+              expect(element.response.length).to.be.equal(2);
+              done();
+            });
+
+            server.respond();
+          });
+
+          test('success event gets fired', function(done) {
+            var element = fixture('BooksAll');
+            element.get();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(event.detail.response).to.be.ok;
+              expect(event.detail.response).to.be.an('array');
+              done();
+            });
+
+            server.respond();
+          });
+
+          test('single returns an object', function(done ) {
+            var element = fixture('BooksSingle');
+            element.get();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(event.detail.response).to.be.ok;
+              expect(event.detail.response).to.be.an('Object');
+              expect(event.detail.response.id).to.be.equal('a36');
+              done();
+            });
+
+            server.respond();
+          });
+        });
+
+        suite('.create() method', function() {
+          test('uses POST method', function() {
+            var element = fixture('CreatePicture');
+            element.create();
+
+            expect(server.requests[0].method).to.be.equal('POST');
+          });
+
+          test('uses correct path', function() {
+            var element = fixture('CreatePicture');
+            element.create();
+
+            expect(server.requests[0].url).to.be.equal('http://example.com/pictures');
+          });
+
+          test('sends and recieves data', function(done) {
+            var element = fixture('CreatePicture');
+            element.create();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(server.requests.length).to.be.equal(1);
+              expect(server.requests[0].requestBody).to.be.ok;
+              expect(server.requests[0].requestBody).to.be.an('string');
+              expect(JSON.parse(server.requests[0].requestBody).picture.name).to.be.equal('test');
+
+              expect(element.response).to.be.ok;
+              expect(element.response).to.be.an('object');
+              expect(element.response.id).to.be.equal('new-id');
+
+              done();
+            });
+
+            server.respond();
+          });
+
+        });
+
+        suite('.update() method', function() {
+          test('uses PUT method', function() {
+            var element = fixture('UpdateAuthor');
+            element.update();
+
+            expect(server.requests[0].method).to.be.equal('PUT');
+          });
+
+          test('uses correct path', function() {
+            var element = fixture('UpdateAuthor');
+            element.update();
+
+            expect(server.requests[0].url).to.be.equal('http://example.com/authors/first-one');
+          });
+
+          test('sends and recieves data', function(done) {
+            var element = fixture('UpdateAuthor');
+            element.update();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(server.requests.length).to.be.equal(1);
+              expect(server.requests[0].requestBody).to.be.ok;
+              expect(server.requests[0].requestBody).to.be.an('string');
+              expect(JSON.parse(server.requests[0].requestBody).author.name).to.be.equal('test');
+
+              expect(element.response).to.be.ok;
+              expect(element.response).to.be.an('object');
+              expect(element.response.id).to.be.equal('first-one');
+
+              done();
+            });
+
+            server.respond();
+          });
+
+          suite('when errors encountered', function() {
+            test('an event gets fired', function(done) {
+              var element = fixture('UpdateAuthorError');
+              element.update();
+
+              element.addEventListener('jsonapi-error', function(event) {
+                done();
+              });
+
+              server.respond();
+            });
+
+            test('the error object gets set', function(done) {
+              var element = fixture('UpdateAuthorError');
+              element.update();
+
+              element.addEventListener('jsonapi-error', function(event) {
+                expect(server.requests.length).to.be.equal(1);
+
+                expect(element.errors).to.be.ok;
+                expect(element.errors[0]).to.be.an('object');
+                expect(element.errors[0].context).to.be.equal('some field was missing');
+
+                done();
+              });
+
+              server.respond();
+            });
+          });
+        });
+
+        suite('.delete() method', function() {
+          test('uses DELETE method', function() {
+            var element = fixture('BooksSingle');
+            element.delete();
+
+            expect(server.requests[0].method).to.be.equal('DELETE');
+          });
+
+          test('uses correct path', function() {
+            var element = fixture('BooksSingle');
+            element.delete();
+
+            expect(server.requests[0].url).to.be.equal('http://example.com/books/specific-id');
+          });
+
+          test('returns no data', function(done) {
+            var element = fixture('BooksSingle');
+            element.delete();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(server.requests.length).to.be.equal(1);
+              expect(element.response).to.be.empty;
+              done();
+            });
+
+            server.respond();
+          });
+        });
+
+        suite('.save() method', function() {
+          test('calls create when resource id is empty', function() {
+            var element = fixture('CreatePicture');
+            element.save();
+
+            expect(server.requests.length).to.be.equal(1);
+            expect(server.requests[0].method).to.be.equal('POST');
+          });
+
+          test('calls update when resource id is set', function() {
+            var element = fixture('UpdateAuthor');
+            element.save();
+
+            expect(server.requests.length).to.be.equal(1);
+            expect(server.requests[0].method).to.be.equal('PUT');
+          });
+        });
+      });
+    </script>
+
+  </body>
+</html>
