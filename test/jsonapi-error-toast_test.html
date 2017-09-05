@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>jsonapi-error-toast test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../jsonapi-error-toast.html">
+  </head>
+  <body>
+
+    <test-fixture id="Basic">
+      <template>
+        <jsonapi-error-toast></jsonapi-error-toast>
+      </template>
+    </test-fixture>
+
+    <script>
+      setup(function() {
+        errorEvent = new CustomEvent('jsonapi-error', {
+          detail: {
+            'errors': [{
+              'statusCode': 418,
+              'detail': 'detailstring',
+              'context': 'contextstring',
+            }]
+          },
+          bubbles: true,
+          composed: true,
+        });
+
+        element = fixture('Basic');
+        elementToast = element.shadowRoot.querySelector('paper-toast');
+
+        document.body.dispatchEvent(errorEvent);
+      });
+
+      suite('<jsonapi-error-toast>', function() {
+        test('event opens the toast', function(){
+          expect(elementToast.opened).to.be.true;
+        });
+
+        test('toast contains error details', function(done){
+          var shadowRoot = element.shadowRoot;
+
+          flush(function() {
+            expect(shadowRoot.innerHTML).to.have.string('detailstring');
+            expect(shadowRoot.innerHTML).to.have.string('418');
+            expect(shadowRoot.innerHTML).to.have.string('contextstring');
+            done();
+          });
+        });
+      });
+    </script>
+
+  </body>
+</html>
