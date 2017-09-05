@@ -106,7 +106,7 @@
 
       static get observers() {
         return [
-          '_autoGet(apiRoot, apiKey, resource, resourceId, filters.*)',
+          '_autoGet(apiRoot, apiKey, resource, resourceId, filters.*, autoGet)',
         ];
       }
 
