@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>jsonapi-settings test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../jsonapi-settings.html">
+    <link rel="import" href="../jsonapi-resource.html">
+  </head>
+  <body>
+
+    <test-fixture id="Standalone">
+      <template>
+        <jsonapi-resource></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="StandaloneWithSettings">
+      <template>
+        <jsonapi-resource
+          api-root="http://another.example.com"
+        ></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="Basic">
+      <template>
+        <jsonapi-settings
+          api-root="http://example.com"
+        ></jsonapi-settings>
+        <jsonapi-resource></jsonapi-resource>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('<jsonapi-settings>', function() {
+
+        test('resource default settings are empty', function(){
+          var resource = fixture('Standalone');
+
+          expect(resource.apiRoot).to.be.empty;
+        });
+
+        test('resource can set settings standalone', function(){
+          var resource = fixture('StandaloneWithSettings');
+
+          expect(resource.apiRoot).to.be.ok;
+          expect(resource.apiRoot).to.be.an('string');
+          expect(resource.apiRoot).to.be.equal('http://another.example.com');
+        });
+
+        test('resource inherits settings', function() {
+          var elements = fixture('Basic');
+          var settings = elements[0];
+          var resource = elements[0];
+
+          expect(resource.apiRoot).to.be.ok;
+          expect(resource.apiRoot).to.be.an('string');
+          expect(resource.apiRoot).to.be.equal('http://example.com');
+        });
+
+        test('resource gets updated on change', function() {
+          var elements = fixture('Basic');
+          var settings = elements[0];
+          var resource = elements[0];
+
+          settings.apiRoot = 'http://subdomain.example.com';
+
+          expect(resource.apiRoot).to.be.ok;
+          expect(resource.apiRoot).to.be.an('string');
+          expect(resource.apiRoot).to.be.equal('http://subdomain.example.com');
+        });
+      });
+    </script>
+
+  </body>
+</html>
