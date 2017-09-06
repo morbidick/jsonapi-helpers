@@ -1,4 +1,4 @@
-# Polymer 2 components communicate with a jsonapi
+# Polymer 2 components to communicate with a jsonapi
 
 [![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/morbidick/jsonapi-helpers)
 [![Build Status](https://travis-ci.org/morbidick/jsonapi-helpers.svg?branch=master)](https://travis-ci.org/morbidick/jsonapi-helpers)
@@ -9,7 +9,7 @@ Components to communicate with an api, according to the [jsonapi spec](http://js
 
 ### \<jsonapi-resource\>
 
-Interact with a jsonapi resource endpoint. Items can be fetched, created, updated and deleted.
+Interact with a jsonapi resource endpoint. Items can be **fetched**, **created**, **updated** and **deleted**.
 
 ```html
 <jsonapi-resource
@@ -43,7 +43,7 @@ Interact with a jsonapi resource endpoint. Items can be fetched, created, update
 
 ### \<jsonapi-settings\>
 
-Set api settings once globally.
+Set api settings once globally. For now they can't be overwritten on the `jsonapi-resource` element.
 
 ```html
 <jsonapi-settings
@@ -59,7 +59,7 @@ Set api settings once globally.
 
 ### \<jsonapi-error-toast\>
 
-Display a toast with the error details if any `<jsonapi-resource>` on the site encounters an error.
+"Singleton Element" to display a toast with the error details if any `<jsonapi-resource>` on the site encounters an error.
 
 ```html
 <jsonapi-error-toast></jsonapi-error-toast>
