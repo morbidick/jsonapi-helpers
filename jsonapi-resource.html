@@ -11,7 +11,6 @@
       id="request"
       handle-as="json"
       params="[[ params ]]"
-      content-type="application/json"
       on-response="_handleResponse"
       on-error="_handleError"></iron-ajax>
   </template>
@@ -121,7 +120,7 @@
           this.$.request.url = this._appendParam(`${this.apiRoot}/${this.resource}`, this._filterString());
         }
 
-        this.$.request.body = {};
+        this._clearBody();
         this._generateRequest('GET');
       }
 
@@ -152,6 +151,7 @@
        *
        */
       delete() {
+        this._clearBody();
         this.$.request.url = `${this.apiRoot}/${this.resource}/${this.resourceId}`;
         this._generateRequest('DELETE');
       }
@@ -170,8 +170,14 @@
 
       _setBody() {
         this.single = true;
+        this.$.request.contentType = "application/json";
         this.$.request.body = {};
         this.$.request.body[this._singularize(this.resource)] = this.data;
+      }
+
+      _clearBody() {
+        this.$.request.contentType = "text/plain";
+        this.$.request.body = {};
       }
 
       _generateRequest(method) {
