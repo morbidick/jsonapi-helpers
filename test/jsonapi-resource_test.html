@@ -171,6 +171,20 @@
             expect(server.requests[0].method).to.be.equal('GET');
           });
 
+          test('sets active when requests are in flight', function() {
+            var element = fixture('BooksAll');
+            element.get();
+
+            element.addEventListener('jsonapi-response', function(event) {
+              expect(element.active).to.be.false;
+              done();
+            });
+
+            expect(element.active).to.be.ok;
+            expect(element.active).to.be.true;
+            server.respond();
+          });
+
           test('uses correct path', function() {
             var element = fixture('BooksAll');
             element.get();

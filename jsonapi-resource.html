@@ -11,6 +11,7 @@
       id="request"
       handle-as="json"
       params="[[ params ]]"
+      on-active-requests-changed="_active"
       on-response="_handleResponse"
       on-error="_handleError"></iron-ajax>
   </template>
@@ -99,7 +100,13 @@
           debounceDuration: {
             type: Number,
             default: 100,
-          }
+          },
+          /** whether there are active requests **/
+          active: {
+            type: Boolean,
+            notify: true,
+            value: false,
+          },
         };
       }
 
@@ -231,6 +238,11 @@
         };
       }
 
+      _active(event) {
+        let ajax = event.composedPath()[0];
+        this.active = ajax.activeRequests && ajax.activeRequests.length !== 0;
+      }
+
       /**
        * singularize the resource
        * for now its enough to cut the trailing s
@@ -284,14 +296,14 @@
       _handleError(event, error) {
         let xhr = error.request.xhr;
 
-        if( [0, 405, 502, 503, 504].includes(xhr.status) ) {
-          this.push('errors', {
+        if( xhr.response && xhr.response.errors) {
+          this.errors = xhr.response.errors;
+        } else {
+          this.errors = [{
             'statusCode': xhr.status,
             'detail': 'Server unreachable',
             'context': `${this.resource} ${this.$.request.method}`,
-          });
-        } else {
-          this.errors = xhr.response.errors;
+          }];
         }
 
         /**
