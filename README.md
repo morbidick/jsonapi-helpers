@@ -1,7 +1,7 @@
 # Polymer 2 components to communicate with a jsonapi
 
 [![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/morbidick/jsonapi-helpers)
-[![Build Status](https://travis-ci.org/morbidick/jsonapi-helpers.svg?branch=master)](https://travis-ci.org/morbidick/jsonapi-helpers)
+[![Build Status](https://travis-ci.org/morbidick/jsonapi-helpers.svg?branch=master)](https://travis-ci.org/morbidick/jsonapi-helpers) [![Greenkeeper badge](https://badges.greenkeeper.io/morbidick/jsonapi-helpers.svg)](https://greenkeeper.io/)
 
 Components to communicate with an api, according to the [jsonapi spec](http://jsonapi.org/format/).
 
